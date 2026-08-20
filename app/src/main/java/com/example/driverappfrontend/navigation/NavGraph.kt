@@ -1,0 +1,91 @@
+package com.example.driverappfrontend.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.driverappfrontend.data.AuthRepository
+import com.example.driverappfrontend.data.DriverRepository
+import com.example.driverappfrontend.ui.auth.AuthViewModel
+import com.example.driverappfrontend.ui.auth.AuthViewModelFactory
+import com.example.driverappfrontend.ui.auth.OtpEntryScreen
+import com.example.driverappfrontend.ui.auth.PhoneEntryScreen
+import com.example.driverappfrontend.ui.driver.DriverDocumentsScreen
+import com.example.driverappfrontend.ui.driver.DriverScreen
+import com.example.driverappfrontend.ui.driver.DriverViewModel
+import com.example.driverappfrontend.ui.driver.DriverViewModelFactory
+import com.example.driverappfrontend.ui.home.HomeScreen
+
+object Routes {
+    const val PHONE_ENTRY = "phone_entry"
+    const val OTP_ENTRY = "otp_entry"
+    const val HOME = "home"
+    const val DRIVER = "driver"
+    const val DRIVER_DOCUMENTS = "driver_documents"
+}
+
+@Composable
+fun AppNavGraph(
+    authRepository: AuthRepository,
+    driverRepository: DriverRepository,
+    navController: NavHostController = rememberNavController()
+) {
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
+    val driverViewModel: DriverViewModel = viewModel(factory = DriverViewModelFactory(driverRepository))
+
+    NavHost(navController = navController, startDestination = Routes.PHONE_ENTRY) {
+        composable(Routes.PHONE_ENTRY) {
+            PhoneEntryScreen(
+                viewModel = authViewModel,
+                onOtpSent = { navController.navigate(Routes.OTP_ENTRY) },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.OTP_ENTRY) {
+            OtpEntryScreen(
+                viewModel = authViewModel,
+                onVerified = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.PHONE_ENTRY) { inclusive = true }
+                    }
+                },
+                onBack = { navController.popBackStack() },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.HOME) {
+            val state by authViewModel.uiState.collectAsState()
+            HomeScreen(
+                phone = state.phone,
+                onOpenDriver = { navController.navigate(Routes.DRIVER) },
+                onLogout = {
+                    authViewModel.logout {
+                        navController.navigate(Routes.PHONE_ENTRY) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.DRIVER) {
+            DriverScreen(
+                viewModel = driverViewModel,
+                onOpenDocuments = { navController.navigate(Routes.DRIVER_DOCUMENTS) },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.DRIVER_DOCUMENTS) {
+            DriverDocumentsScreen(
+                viewModel = driverViewModel,
+                onBack = { navController.popBackStack() },
+                modifier = Modifier
+            )
+        }
+    }
+}
