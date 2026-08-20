@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.driverappfrontend.data.AuthRepository
 import com.example.driverappfrontend.data.DriverRepository
+import com.example.driverappfrontend.data.ProfileRepository
 import com.example.driverappfrontend.data.TokenStore
 import com.example.driverappfrontend.navigation.AppNavGraph
 import com.example.driverappfrontend.network.NetworkModule
@@ -24,10 +25,15 @@ class MainActivity : ComponentActivity() {
 
         val authRepository = AuthRepository(NetworkModule.authApi, tokenStore, applicationContext)
         val driverRepository = DriverRepository(NetworkModule.driverApi)
+        val profileRepository = ProfileRepository(NetworkModule.profileApi)
 
         setContent {
             DriverAppFrontendTheme {
-                AppNavGraph(authRepository = authRepository, driverRepository = driverRepository)
+                AppNavGraph(
+                    authRepository = authRepository,
+                    driverRepository = driverRepository,
+                    profileRepository = profileRepository
+                )
             }
         }
     }

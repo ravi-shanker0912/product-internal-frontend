@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.driverappfrontend.data.AuthRepository
 import com.example.driverappfrontend.data.DriverRepository
+import com.example.driverappfrontend.data.ProfileRepository
 import com.example.driverappfrontend.ui.auth.AuthViewModel
 import com.example.driverappfrontend.ui.auth.AuthViewModelFactory
 import com.example.driverappfrontend.ui.auth.OtpEntryScreen
@@ -20,11 +21,15 @@ import com.example.driverappfrontend.ui.driver.DriverScreen
 import com.example.driverappfrontend.ui.driver.DriverViewModel
 import com.example.driverappfrontend.ui.driver.DriverViewModelFactory
 import com.example.driverappfrontend.ui.home.HomeScreen
+import com.example.driverappfrontend.ui.profile.ProfileScreen
+import com.example.driverappfrontend.ui.profile.ProfileViewModel
+import com.example.driverappfrontend.ui.profile.ProfileViewModelFactory
 
 object Routes {
     const val PHONE_ENTRY = "phone_entry"
     const val OTP_ENTRY = "otp_entry"
     const val HOME = "home"
+    const val PROFILE = "profile"
     const val DRIVER = "driver"
     const val DRIVER_DOCUMENTS = "driver_documents"
 }
@@ -33,10 +38,12 @@ object Routes {
 fun AppNavGraph(
     authRepository: AuthRepository,
     driverRepository: DriverRepository,
+    profileRepository: ProfileRepository,
     navController: NavHostController = rememberNavController()
 ) {
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
     val driverViewModel: DriverViewModel = viewModel(factory = DriverViewModelFactory(driverRepository))
+    val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModelFactory(profileRepository))
 
     NavHost(navController = navController, startDestination = Routes.PHONE_ENTRY) {
         composable(Routes.PHONE_ENTRY) {
@@ -62,6 +69,7 @@ fun AppNavGraph(
             val state by authViewModel.uiState.collectAsState()
             HomeScreen(
                 phone = state.phone,
+                onOpenProfile = { navController.navigate(Routes.PROFILE) },
                 onOpenDriver = { navController.navigate(Routes.DRIVER) },
                 onLogout = {
                     authViewModel.logout {
@@ -70,6 +78,13 @@ fun AppNavGraph(
                         }
                     }
                 },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.PROFILE) {
+            ProfileScreen(
+                viewModel = profileViewModel,
+                onBack = { navController.popBackStack() },
                 modifier = Modifier
             )
         }

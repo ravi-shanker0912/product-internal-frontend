@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun HomeScreen(
     phone: String,
+    onOpenProfile: () -> Unit,
     onOpenDriver: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
@@ -35,8 +36,15 @@ fun HomeScreen(
             Text(phone, style = MaterialTheme.typography.bodyMedium)
 
             Button(
-                onClick = onOpenDriver,
+                onClick = onOpenProfile,
                 modifier = Modifier.fillMaxWidth().padding(top = 24.dp)
+            ) {
+                Text("Profile")
+            }
+
+            Button(
+                onClick = onOpenDriver,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
                 Text("Become a driver")
             }
