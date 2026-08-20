@@ -20,6 +20,7 @@ import com.example.driverappfrontend.ui.driver.DriverDocumentsScreen
 import com.example.driverappfrontend.ui.driver.DriverScreen
 import com.example.driverappfrontend.ui.driver.DriverViewModel
 import com.example.driverappfrontend.ui.driver.DriverViewModelFactory
+import com.example.driverappfrontend.ui.driver.VehiclesScreen
 import com.example.driverappfrontend.ui.home.HomeScreen
 import com.example.driverappfrontend.ui.profile.ProfileScreen
 import com.example.driverappfrontend.ui.profile.ProfileViewModel
@@ -32,6 +33,7 @@ object Routes {
     const val PROFILE = "profile"
     const val DRIVER = "driver"
     const val DRIVER_DOCUMENTS = "driver_documents"
+    const val VEHICLES = "vehicles"
 }
 
 @Composable
@@ -92,11 +94,19 @@ fun AppNavGraph(
             DriverScreen(
                 viewModel = driverViewModel,
                 onOpenDocuments = { navController.navigate(Routes.DRIVER_DOCUMENTS) },
+                onOpenVehicles = { navController.navigate(Routes.VEHICLES) },
                 modifier = Modifier
             )
         }
         composable(Routes.DRIVER_DOCUMENTS) {
             DriverDocumentsScreen(
+                viewModel = driverViewModel,
+                onBack = { navController.popBackStack() },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.VEHICLES) {
+            VehiclesScreen(
                 viewModel = driverViewModel,
                 onBack = { navController.popBackStack() },
                 modifier = Modifier

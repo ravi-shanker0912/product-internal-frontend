@@ -45,3 +45,29 @@ data class DriverDocument(
     val expiresAt: String?,
     val uploadedAt: String
 )
+
+data class AddVehicleBody(
+    val ownerType: String, // DRIVER | CUSTOMER
+    val registrationNo: String?,
+    val make: String,
+    val model: String,
+    val gearbox: String, // MANUAL | AUTOMATIC
+    val seats: Short?,
+    val insuranceExpiry: String?
+)
+
+/** Mirrors backend's Vehicle entity JSON. */
+data class Vehicle(
+    val id: String,
+    val createdAt: String,
+    val updatedAt: String,
+    val ownerUserId: String,
+    val ownerType: String,
+    val registrationNo: String?,
+    val make: String,
+    val model: String,
+    val gearbox: String,
+    val seats: Short,
+    val insuranceExpiry: String?,
+    val active: Boolean
+)

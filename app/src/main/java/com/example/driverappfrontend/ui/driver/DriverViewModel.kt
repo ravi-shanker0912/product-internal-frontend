@@ -7,6 +7,7 @@ import com.example.driverappfrontend.data.DriverRepository
 import com.example.driverappfrontend.network.DriverDocument
 import com.example.driverappfrontend.network.DriverProfile
 import com.example.driverappfrontend.network.ErrorParser
+import com.example.driverappfrontend.network.Vehicle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,7 +36,12 @@ data class DriverUiState(
     val documents: List<DriverDocument> = emptyList(),
     val isLoadingDocuments: Boolean = false,
     val isUploadingDoc: Boolean = false,
-    val docUploadError: String? = null
+    val docUploadError: String? = null,
+
+    val vehicles: List<Vehicle> = emptyList(),
+    val isLoadingVehicles: Boolean = false,
+    val isAddingVehicle: Boolean = false,
+    val vehicleError: String? = null
 )
 
 class DriverViewModel(private val repository: DriverRepository) : ViewModel() {
@@ -163,6 +169,39 @@ class DriverViewModel(private val repository: DriverRepository) : ViewModel() {
                 }
                 .onFailure { e ->
                     _uiState.update { it.copy(isUploadingDoc = false, docUploadError = ErrorParser.extractMessage(e)) }
+                }
+        }
+    }
+    fun loadVehicles() {
+        _uiState.update { it.copy(isLoadingVehicles = true, vehicleError = null) }
+        viewModelScope.launch {
+            repository.listVehicles()
+                .onSuccess { vehicles -> _uiState.update { it.copy(isLoadingVehicles = false, vehicles = vehicles) } }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoadingVehicles = false, vehicleError = ErrorParser.extractMessage(e))
+                    }
+                }
+        }
+    }
+
+    fun addVehicle(
+        registrationNo: String?,
+        make: String,
+        model: String,
+        gearbox: String,
+        seats: Short?,
+        insuranceExpiry: String?
+    ) {
+        _uiState.update { it.copy(isAddingVehicle = true, vehicleError = null) }
+        viewModelScope.launch {
+            repository.addVehicle(registrationNo, make, model, gearbox, seats, insuranceExpiry)
+                .onSuccess {
+                    _uiState.update { it.copy(isAddingVehicle = false) }
+                    loadVehicles()
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(isAddingVehicle = false, vehicleError = ErrorParser.extractMessage(e)) }
                 }
         }
     }

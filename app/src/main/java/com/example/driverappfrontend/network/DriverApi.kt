@@ -24,4 +24,10 @@ interface DriverApi {
 
     @GET("api/me/driver/documents")
     suspend fun listDocuments(): List<DriverDocument>
+
+    @POST("api/me/vehicles")
+    suspend fun addVehicle(@Body body: AddVehicleBody): Vehicle
+
+    @GET("api/me/vehicles")
+    suspend fun listVehicles(): List<Vehicle>
 }

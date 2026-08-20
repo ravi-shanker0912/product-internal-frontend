@@ -1,5 +1,6 @@
 package com.example.driverappfrontend.data
 
+import com.example.driverappfrontend.network.AddVehicleBody
 import com.example.driverappfrontend.network.AvailabilityBody
 import com.example.driverappfrontend.network.CreateDriverProfileBody
 import com.example.driverappfrontend.network.DriverApi
@@ -7,6 +8,7 @@ import com.example.driverappfrontend.network.DriverDocument
 import com.example.driverappfrontend.network.DriverProfile
 import com.example.driverappfrontend.network.LocationBody
 import com.example.driverappfrontend.network.UploadDocumentBody
+import com.example.driverappfrontend.network.Vehicle
 import retrofit2.HttpException
 
 class DriverRepository(private val api: DriverApi) {
@@ -40,4 +42,27 @@ class DriverRepository(private val api: DriverApi) {
     }
 
     suspend fun listDocuments(): Result<List<DriverDocument>> = runCatching { api.listDocuments() }
+
+    suspend fun addVehicle(
+        registrationNo: String?,
+        make: String,
+        model: String,
+        gearbox: String,
+        seats: Short?,
+        insuranceExpiry: String?
+    ): Result<Vehicle> = runCatching {
+        api.addVehicle(
+            AddVehicleBody(
+                ownerType = "DRIVER",
+                registrationNo = registrationNo,
+                make = make,
+                model = model,
+                gearbox = gearbox,
+                seats = seats,
+                insuranceExpiry = insuranceExpiry
+            )
+        )
+    }
+
+    suspend fun listVehicles(): Result<List<Vehicle>> = runCatching { api.listVehicles() }
 }

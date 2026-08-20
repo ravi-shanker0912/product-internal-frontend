@@ -39,6 +39,7 @@ import androidx.core.content.ContextCompat
 fun DriverScreen(
     viewModel: DriverViewModel,
     onOpenDocuments: () -> Unit,
+    onOpenVehicles: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -76,6 +77,7 @@ fun DriverScreen(
                         state = state,
                         viewModel = viewModel,
                         onOpenDocuments = onOpenDocuments,
+                        onOpenVehicles = onOpenVehicles,
                         onUpdateLocation = {
                             val hasPermission = ContextCompat.checkSelfPermission(
                                 context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -156,6 +158,7 @@ private fun DriverDashboard(
     state: DriverUiState,
     viewModel: DriverViewModel,
     onOpenDocuments: () -> Unit,
+    onOpenVehicles: () -> Unit,
     onUpdateLocation: () -> Unit
 ) {
     val profile = state.profile ?: return
@@ -227,6 +230,13 @@ private fun DriverDashboard(
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
     ) {
         Text("Documents")
+    }
+
+    OutlinedButton(
+        onClick = onOpenVehicles,
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+    ) {
+        Text("Vehicles")
     }
 }
 
