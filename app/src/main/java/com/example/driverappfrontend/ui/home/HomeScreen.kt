@@ -20,6 +20,7 @@ fun HomeScreen(
     phone: String,
     onOpenProfile: () -> Unit,
     onOpenDriver: () -> Unit,
+    onOpenSearch: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -47,6 +48,13 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
                 Text("Become a driver")
+            }
+
+            Button(
+                onClick = onOpenSearch,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            ) {
+                Text("Find a driver")
             }
 
             OutlinedButton(

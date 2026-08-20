@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.driverappfrontend.data.AuthRepository
 import com.example.driverappfrontend.data.DriverRepository
 import com.example.driverappfrontend.data.ProfileRepository
+import com.example.driverappfrontend.data.SearchRepository
 import com.example.driverappfrontend.ui.auth.AuthViewModel
 import com.example.driverappfrontend.ui.auth.AuthViewModelFactory
 import com.example.driverappfrontend.ui.auth.OtpEntryScreen
@@ -25,6 +26,9 @@ import com.example.driverappfrontend.ui.home.HomeScreen
 import com.example.driverappfrontend.ui.profile.ProfileScreen
 import com.example.driverappfrontend.ui.profile.ProfileViewModel
 import com.example.driverappfrontend.ui.profile.ProfileViewModelFactory
+import com.example.driverappfrontend.ui.search.SearchScreen
+import com.example.driverappfrontend.ui.search.SearchViewModel
+import com.example.driverappfrontend.ui.search.SearchViewModelFactory
 
 object Routes {
     const val PHONE_ENTRY = "phone_entry"
@@ -34,6 +38,7 @@ object Routes {
     const val DRIVER = "driver"
     const val DRIVER_DOCUMENTS = "driver_documents"
     const val VEHICLES = "vehicles"
+    const val SEARCH = "search"
 }
 
 @Composable
@@ -41,11 +46,13 @@ fun AppNavGraph(
     authRepository: AuthRepository,
     driverRepository: DriverRepository,
     profileRepository: ProfileRepository,
+    searchRepository: SearchRepository,
     navController: NavHostController = rememberNavController()
 ) {
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
     val driverViewModel: DriverViewModel = viewModel(factory = DriverViewModelFactory(driverRepository))
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModelFactory(profileRepository))
+    val searchViewModel: SearchViewModel = viewModel(factory = SearchViewModelFactory(searchRepository))
 
     NavHost(navController = navController, startDestination = Routes.PHONE_ENTRY) {
         composable(Routes.PHONE_ENTRY) {
@@ -73,6 +80,7 @@ fun AppNavGraph(
                 phone = state.phone,
                 onOpenProfile = { navController.navigate(Routes.PROFILE) },
                 onOpenDriver = { navController.navigate(Routes.DRIVER) },
+                onOpenSearch = { navController.navigate(Routes.SEARCH) },
                 onLogout = {
                     authViewModel.logout {
                         navController.navigate(Routes.PHONE_ENTRY) {
@@ -108,6 +116,13 @@ fun AppNavGraph(
         composable(Routes.VEHICLES) {
             VehiclesScreen(
                 viewModel = driverViewModel,
+                onBack = { navController.popBackStack() },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.SEARCH) {
+            SearchScreen(
+                viewModel = searchViewModel,
                 onBack = { navController.popBackStack() },
                 modifier = Modifier
             )
