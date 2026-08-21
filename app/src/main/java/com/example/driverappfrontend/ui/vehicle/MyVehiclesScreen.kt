@@ -36,7 +36,12 @@ private val gearboxOptions = listOf("MANUAL", "AUTOMATIC")
 fun MyVehiclesScreen(
     viewModel: VehicleViewModel,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    title: String = "My car",
+    subtitle: String = "Register your car so a driver knows what they're driving.",
+    addButtonLabel: String = "Add car",
+    listTitle: String = "Your cars",
+    emptyListLabel: String = "No cars added yet."
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -57,9 +62,9 @@ fun MyVehiclesScreen(
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            Text("My car", style = MaterialTheme.typography.headlineSmall)
+            Text(title, style = MaterialTheme.typography.headlineSmall)
             Text(
-                "Register your car so a driver knows what they're driving.",
+                subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 4.dp)
             )
@@ -157,19 +162,19 @@ fun MyVehiclesScreen(
                 if (state.isAdding) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))
                 } else {
-                    Text("Add car")
+                    Text(addButtonLabel)
                 }
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
 
-            Text("Your cars", style = MaterialTheme.typography.titleMedium)
+            Text(listTitle, style = MaterialTheme.typography.titleMedium)
 
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
             } else if (state.vehicles.isEmpty()) {
                 Text(
-                    "No cars added yet.",
+                    emptyListLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )

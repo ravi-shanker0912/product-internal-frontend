@@ -30,7 +30,6 @@ import com.example.driverappfrontend.ui.driver.DriverDocumentsScreen
 import com.example.driverappfrontend.ui.driver.DriverScreen
 import com.example.driverappfrontend.ui.driver.DriverViewModel
 import com.example.driverappfrontend.ui.driver.DriverViewModelFactory
-import com.example.driverappfrontend.ui.driver.VehiclesScreen
 import com.example.driverappfrontend.ui.home.HomeScreen
 import com.example.driverappfrontend.ui.profile.ProfileScreen
 import com.example.driverappfrontend.ui.profile.ProfileViewModel
@@ -67,6 +66,7 @@ fun AppNavGraph(
     searchRepository: SearchRepository,
     bookingRepository: BookingRepository,
     customerVehicleRepository: VehicleRepository,
+    driverVehicleRepository: VehicleRepository,
     navController: NavHostController = rememberNavController()
 ) {
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
@@ -75,7 +75,9 @@ fun AppNavGraph(
     val searchViewModel: SearchViewModel = viewModel(factory = SearchViewModelFactory(searchRepository))
     val bookingViewModel: BookingViewModel = viewModel(factory = BookingViewModelFactory(bookingRepository))
     val customerVehicleViewModel: VehicleViewModel =
-        viewModel(factory = VehicleViewModelFactory(customerVehicleRepository))
+        viewModel(key = "customerVehicles", factory = VehicleViewModelFactory(customerVehicleRepository))
+    val driverVehicleViewModel: VehicleViewModel =
+        viewModel(key = "driverVehicles", factory = VehicleViewModelFactory(driverVehicleRepository))
 
     NavHost(navController = navController, startDestination = Routes.PHONE_ENTRY) {
         composable(Routes.PHONE_ENTRY) {
@@ -139,10 +141,15 @@ fun AppNavGraph(
             )
         }
         composable(Routes.VEHICLES) {
-            VehiclesScreen(
-                viewModel = driverViewModel,
+            MyVehiclesScreen(
+                viewModel = driverVehicleViewModel,
                 onBack = { navController.popBackStack() },
-                modifier = Modifier
+                modifier = Modifier,
+                title = "Vehicles",
+                subtitle = "Register the vehicle you'll drive so customers know what to expect.",
+                addButtonLabel = "Add vehicle",
+                listTitle = "Your vehicles",
+                emptyListLabel = "No vehicles added yet."
             )
         }
         composable(Routes.SEARCH) {

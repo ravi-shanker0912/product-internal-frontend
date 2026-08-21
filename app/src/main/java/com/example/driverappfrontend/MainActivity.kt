@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
         val searchRepository = SearchRepository(NetworkModule.searchApi)
         val bookingRepository = BookingRepository(NetworkModule.bookingApi)
         val customerVehicleRepository = VehicleRepository(NetworkModule.driverApi, ownerType = "CUSTOMER")
+        val driverVehicleRepository = VehicleRepository(NetworkModule.driverApi, ownerType = "DRIVER")
 
         setContent {
             DriverAppFrontendTheme {
@@ -41,7 +42,8 @@ class MainActivity : ComponentActivity() {
                     profileRepository = profileRepository,
                     searchRepository = searchRepository,
                     bookingRepository = bookingRepository,
-                    customerVehicleRepository = customerVehicleRepository
+                    customerVehicleRepository = customerVehicleRepository,
+                    driverVehicleRepository = driverVehicleRepository
                 )
             }
         }
