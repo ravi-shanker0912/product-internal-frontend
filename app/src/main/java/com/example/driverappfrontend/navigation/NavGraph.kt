@@ -130,6 +130,7 @@ fun AppNavGraph(
                 viewModel = driverViewModel,
                 onOpenDocuments = { navController.navigate(Routes.DRIVER_DOCUMENTS) },
                 onOpenVehicles = { navController.navigate(Routes.VEHICLES) },
+                onBack = { navController.popBackStack() },
                 modifier = Modifier
             )
         }

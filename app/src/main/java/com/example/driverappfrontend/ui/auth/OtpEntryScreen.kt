@@ -17,8 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.driverappfrontend.ui.common.AppTopBar
+import com.example.driverappfrontend.ui.common.SectionCard
 
 @Composable
 fun OtpEntryScreen(
@@ -30,7 +33,10 @@ fun OtpEntryScreen(
     val state by viewModel.uiState.collectAsState()
     val isOtpValid = state.otp.length == OTP_LENGTH && state.otp.all { it.isDigit() }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { AppTopBar(title = "Verify phone", onBack = onBack) }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -38,63 +44,68 @@ fun OtpEntryScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Enter the $OTP_LENGTH-digit code",
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Text(
-                text = "Sent to ${state.phone}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            OutlinedTextField(
-                value = state.otp,
-                onValueChange = { value ->
-                    if (value.length <= OTP_LENGTH && value.all { it.isDigit() }) {
-                        viewModel.onOtpChange(value)
-                    }
-                },
-                label = { Text("OTP") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = KeyboardType.NumberPassword
-                ),
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
-            )
-
-            if (state.errorMessage != null) {
+            SectionCard {
                 Text(
-                    text = state.errorMessage!!,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 8.dp)
+                    text = "Enter the $OTP_LENGTH-digit code",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
                 )
-            }
+                Text(
+                    text = "Sent to ${state.phone}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
 
-            Button(
-                onClick = { viewModel.verifyOtp(onSuccess = onVerified) },
-                enabled = isOtpValid && !state.isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                OutlinedTextField(
+                    value = state.otp,
+                    onValueChange = { value ->
+                        if (value.length <= OTP_LENGTH && value.all { it.isDigit() }) {
+                            viewModel.onOtpChange(value)
+                        }
+                    },
+                    label = { Text("OTP") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword
+                    ),
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                )
+
+                if (state.errorMessage != null) {
+                    Text(
+                        text = state.errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
-                } else {
-                    Text("Verify")
                 }
-            }
 
-            TextButton(
-                onClick = onBack,
-                enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Change phone number")
+                Button(
+                    onClick = { viewModel.verifyOtp(onSuccess = onVerified) },
+                    enabled = isOtpValid && !state.isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Verify")
+                    }
+                }
+
+                TextButton(
+                    onClick = onBack,
+                    enabled = !state.isLoading,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                ) {
+                    Text("Change phone number")
+                }
             }
         }
     }

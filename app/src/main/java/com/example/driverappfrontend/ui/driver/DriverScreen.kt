@@ -16,9 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -32,14 +36,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.driverappfrontend.ui.common.AppTopBar
+import com.example.driverappfrontend.ui.common.SectionCard
+import com.example.driverappfrontend.ui.common.StatusBadge
+import com.example.driverappfrontend.ui.common.statusTone
 
 @Composable
 fun DriverScreen(
     viewModel: DriverViewModel,
     onOpenDocuments: () -> Unit,
     onOpenVehicles: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -57,13 +67,17 @@ fun DriverScreen(
         }
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { AppTopBar(title = "Driver", onBack = onBack) }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             when {
                 state.isLoadingProfile -> {
@@ -97,58 +111,66 @@ fun DriverScreen(
 
 @Composable
 private fun DriverSignupForm(state: DriverUiState, viewModel: DriverViewModel) {
-    Text("Become a driver", style = MaterialTheme.typography.headlineSmall)
-
-    OutlinedTextField(
-        value = state.licenseNumber,
-        onValueChange = viewModel::onLicenseNumberChange,
-        label = { Text("Driving licence number") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-    )
-
-    OutlinedTextField(
-        value = state.licenseExpiry,
-        onValueChange = viewModel::onLicenseExpiryChange,
-        label = { Text("Licence expiry") },
-        placeholder = { Text("YYYY-MM-DD") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-    )
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-    ) {
-        Checkbox(checked = state.ownsVehicle, onCheckedChange = viewModel::onOwnsVehicleChange)
-        Text("I own my vehicle")
-    }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Checkbox(checked = state.canDriveAutomatic, onCheckedChange = viewModel::onCanDriveAutomaticChange)
-        Text("I can drive automatic")
-    }
-
-    if (state.errorMessage != null) {
+    SectionCard {
+        Text("Become a driver", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Text(
-            text = state.errorMessage,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = 8.dp)
+            "Tell us about your license so we can get you approved.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
         )
-    }
 
-    Button(
-        onClick = { viewModel.submitProfile() },
-        enabled = state.licenseNumber.isNotBlank() && !state.isSubmitting,
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-    ) {
-        if (state.isSubmitting) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
-        } else {
-            Text("Submit")
+        OutlinedTextField(
+            value = state.licenseNumber,
+            onValueChange = viewModel::onLicenseNumberChange,
+            label = { Text("Driving licence number") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+        )
+
+        OutlinedTextField(
+            value = state.licenseExpiry,
+            onValueChange = viewModel::onLicenseExpiryChange,
+            label = { Text("Licence expiry") },
+            placeholder = { Text("YYYY-MM-DD") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+        ) {
+            Checkbox(checked = state.ownsVehicle, onCheckedChange = viewModel::onOwnsVehicleChange)
+            Text("I own my vehicle")
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Checkbox(checked = state.canDriveAutomatic, onCheckedChange = viewModel::onCanDriveAutomaticChange)
+            Text("I can drive automatic")
+        }
+
+        if (state.errorMessage != null) {
+            Text(
+                text = state.errorMessage,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        Button(
+            onClick = { viewModel.submitProfile() },
+            enabled = state.licenseNumber.isNotBlank() && !state.isSubmitting,
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+        ) {
+            if (state.isSubmitting) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+            } else {
+                Text("Submit")
+            }
         }
     }
 }
@@ -163,80 +185,90 @@ private fun DriverDashboard(
 ) {
     val profile = state.profile ?: return
 
-    Text("Driver status", style = MaterialTheme.typography.headlineSmall)
-    Text(
-        text = profile.verifyStatus,
-        style = MaterialTheme.typography.bodyLarge,
-        modifier = Modifier.padding(top = 4.dp)
-    )
-    when (profile.verifyStatus) {
-        "PENDING" -> Text(
-            "Your documents are awaiting review before you can go online.",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 4.dp)
+    SectionCard {
+        Text("Driver status", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        StatusBadge(
+            text = profile.verifyStatus,
+            tone = statusTone(profile.verifyStatus),
+            modifier = Modifier.padding(top = 8.dp)
         )
-        "REJECTED" -> Text(
-            profile.rejectReason ?: "Your application was rejected.",
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
+        when (profile.verifyStatus) {
+            "PENDING" -> Text(
+                "Your documents are awaiting review before you can go online.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            "REJECTED" -> Text(
+                profile.rejectReason ?: "Your application was rejected.",
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier.fillMaxWidth().padding(top = 24.dp)
-    ) {
-        Text("Available for trips")
-        if (state.isTogglingAvailability) {
-            CircularProgressIndicator(modifier = Modifier.size(24.dp))
-        } else {
-            Switch(
-                checked = profile.availability == "ONLINE",
-                onCheckedChange = { viewModel.toggleAvailability() }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
+        ) {
+            Text("Available for trips", style = MaterialTheme.typography.bodyLarge)
+            if (state.isTogglingAvailability) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            } else {
+                Switch(
+                    checked = profile.availability == "ONLINE",
+                    onCheckedChange = { viewModel.toggleAvailability() }
+                )
+            }
+        }
+
+        if (state.errorMessage != null) {
+            Text(
+                text = state.errorMessage,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        OutlinedButton(
+            onClick = onUpdateLocation,
+            enabled = !state.isPingingLocation,
+            modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
+        ) {
+            if (state.isPingingLocation) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+            } else {
+                Text("Update my location")
+            }
+        }
+        if (state.locationStatusMessage != null) {
+            Text(
+                text = state.locationStatusMessage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
     }
 
-    if (state.errorMessage != null) {
-        Text(
-            text = state.errorMessage,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-    }
+    SectionCard {
+        Text("Manage", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
 
-    OutlinedButton(
-        onClick = onUpdateLocation,
-        enabled = !state.isPingingLocation,
-        modifier = Modifier.fillMaxWidth().padding(top = 24.dp)
-    ) {
-        if (state.isPingingLocation) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-        } else {
-            Text("Update my location")
+        OutlinedButton(
+            onClick = onOpenDocuments,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+        ) {
+            Icon(Icons.Filled.Description, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("Documents", modifier = Modifier.padding(start = 8.dp))
         }
-    }
-    if (state.locationStatusMessage != null) {
-        Text(
-            text = state.locationStatusMessage,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
 
-    OutlinedButton(
-        onClick = onOpenDocuments,
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-    ) {
-        Text("Documents")
-    }
-
-    OutlinedButton(
-        onClick = onOpenVehicles,
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-    ) {
-        Text("Vehicles")
+        OutlinedButton(
+            onClick = onOpenVehicles,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+        ) {
+            Icon(Icons.Filled.DirectionsCar, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("Vehicles", modifier = Modifier.padding(start = 8.dp))
+        }
     }
 }
 

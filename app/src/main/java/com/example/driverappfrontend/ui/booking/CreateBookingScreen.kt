@@ -34,8 +34,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.driverappfrontend.ui.common.AppTopBar
+import com.example.driverappfrontend.ui.common.SectionCard
 import com.example.driverappfrontend.ui.vehicle.VehicleViewModel
 
 private val tripTypeOptions = listOf("HOURLY", "FULL_DAY", "OUTSTATION", "CAB_TRIP")
@@ -91,137 +94,140 @@ fun CreateBookingScreen(
         }
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { AppTopBar(title = "Confirm booking", onBack = onBack) }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Confirm booking", style = MaterialTheme.typography.headlineSmall)
-
-            if (lat != null && lon != null) {
-                Text(
-                    text = "Pickup: %.4f, %.4f (your current location)".format(lat, lon),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-            if (locationMessage != null) {
-                Text(
-                    text = locationMessage ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-
-            Text(
-                "Trip type",
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)
-            ) {
-                tripTypeOptions.forEach { option ->
-                    FilterChip(
-                        selected = tripType == option,
-                        onClick = { tripType = option },
-                        label = { Text(option) }
+            SectionCard {
+                if (lat != null && lon != null) {
+                    Text(
+                        text = "Pickup: %.4f, %.4f (your current location)".format(lat, lon),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-
-            OutlinedTextField(
-                value = pickupAddress,
-                onValueChange = { pickupAddress = it },
-                label = { Text("Pickup address (optional)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-            )
-
-            OutlinedTextField(
-                value = dropAddress,
-                onValueChange = { dropAddress = it },
-                label = { Text("Drop address (optional)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-            )
-
-            if (needsVehicle) {
-                Text(
-                    "Your car",
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-                if (vehicleState.vehicles.isEmpty()) {
+                if (locationMessage != null) {
                     Text(
-                        "No car registered yet.",
+                        text = locationMessage ?: "",
+                        color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 4.dp)
                     )
-                } else {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)
-                    ) {
-                        vehicleState.vehicles.forEach { vehicle ->
-                            FilterChip(
-                                selected = selectedVehicleId == vehicle.id,
-                                onClick = { selectedVehicleId = vehicle.id },
-                                label = { Text("${vehicle.make} ${vehicle.model}") }
-                            )
-                        }
+                }
+
+                Text(
+                    "Trip type",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)
+                ) {
+                    tripTypeOptions.forEach { option ->
+                        FilterChip(
+                            selected = tripType == option,
+                            onClick = { tripType = option },
+                            label = { Text(option) }
+                        )
                     }
                 }
-                TextButton(onClick = onManageVehicles, modifier = Modifier.padding(top = 4.dp)) {
-                    Text("Manage my cars")
-                }
-            }
 
-            val error = state.createError
-            if (error != null) {
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 8.dp)
+                OutlinedTextField(
+                    value = pickupAddress,
+                    onValueChange = { pickupAddress = it },
+                    label = { Text("Pickup address (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
                 )
-            }
 
-            Button(
-                onClick = {
-                    val pickLat = lat ?: return@Button
-                    val pickLon = lon ?: return@Button
-                    viewModel.createBooking(
-                        tripType = tripType,
-                        pickupLat = pickLat,
-                        pickupLon = pickLon,
-                        pickupAddress = pickupAddress.trim().ifBlank { null },
-                        dropLat = null,
-                        dropLon = null,
-                        dropAddress = dropAddress.trim().ifBlank { null },
-                        vehicleId = selectedVehicleId,
-                        onCreated = onBooked
+                OutlinedTextField(
+                    value = dropAddress,
+                    onValueChange = { dropAddress = it },
+                    label = { Text("Drop address (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                )
+
+                if (needsVehicle) {
+                    Text(
+                        "Your car",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 16.dp)
                     )
-                },
-                enabled = lat != null && lon != null && !state.isCreating,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-            ) {
-                if (state.isCreating) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Book this driver")
+                    if (vehicleState.vehicles.isEmpty()) {
+                        Text(
+                            "No car registered yet.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    } else {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)
+                        ) {
+                            vehicleState.vehicles.forEach { vehicle ->
+                                FilterChip(
+                                    selected = selectedVehicleId == vehicle.id,
+                                    onClick = { selectedVehicleId = vehicle.id },
+                                    label = { Text("${vehicle.make} ${vehicle.model}") }
+                                )
+                            }
+                        }
+                    }
+                    TextButton(onClick = onManageVehicles, modifier = Modifier.padding(top = 4.dp)) {
+                        Text("Manage my cars")
+                    }
                 }
-            }
 
-            TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("Back")
+                val error = state.createError
+                if (error != null) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        val pickLat = lat ?: return@Button
+                        val pickLon = lon ?: return@Button
+                        viewModel.createBooking(
+                            tripType = tripType,
+                            pickupLat = pickLat,
+                            pickupLon = pickLon,
+                            pickupAddress = pickupAddress.trim().ifBlank { null },
+                            dropLat = null,
+                            dropLon = null,
+                            dropAddress = dropAddress.trim().ifBlank { null },
+                            vehicleId = selectedVehicleId,
+                            onCreated = onBooked
+                        )
+                    },
+                    enabled = lat != null && lon != null && !state.isCreating,
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                ) {
+                    if (state.isCreating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Book this driver")
+                    }
+                }
             }
         }
     }

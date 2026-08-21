@@ -34,10 +34,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.driverappfrontend.ui.common.AppTopBar
+import com.example.driverappfrontend.ui.common.SectionCard
+import com.example.driverappfrontend.ui.common.StatusBadge
+import com.example.driverappfrontend.ui.common.statusTone
 import com.example.driverappfrontend.ui.profile.ProfileViewModel
+import com.example.driverappfrontend.ui.theme.AppTheme
 
 @Composable
 fun BookingDetailScreen(
@@ -81,13 +87,17 @@ fun BookingDetailScreen(
     var rateStars by remember { mutableStateOf(5) }
     var rateComment by remember { mutableStateOf("") }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { AppTopBar(title = booking?.bookingCode ?: "Booking", onBack = onBack) }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (state.isLoadingDetail && booking == null) {
                 CircularProgressIndicator()
@@ -98,66 +108,62 @@ fun BookingDetailScreen(
             }
 
             if (booking != null) {
-                Text(booking.bookingCode, style = MaterialTheme.typography.headlineSmall)
-                Text(
-                    booking.status,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                Text(
-                    "${booking.serviceType} · ${booking.tripType}",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+                SectionCard {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(booking.bookingCode, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        StatusBadge(text = booking.status, tone = statusTone(booking.status))
+                    }
+                    Text(
+                        "${booking.serviceType} · ${booking.tripType}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
 
-                val fare = booking.totalFarePaise ?: booking.estimatedFarePaise
-                if (fare != null) {
-                    val label = if (booking.totalFarePaise != null) "Fare" else "Estimated fare"
-                    Text(
-                        "$label: ₹%.2f".format(fare / 100.0),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
+                    val fare = booking.totalFarePaise ?: booking.estimatedFarePaise
+                    if (fare != null) {
+                        val label = if (booking.totalFarePaise != null) "Fare" else "Estimated fare"
+                        Text(
+                            "$label: ₹%.2f".format(fare / 100.0),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
 
-                val startOtp = state.lastStartOtp
-                if (startOtp != null && isDriver) {
-                    Text(
-                        "Start OTP: $startOtp",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                    Text(
-                        "Have the customer read this back to you to start the trip.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    val startOtp = state.lastStartOtp
+                    if (startOtp != null && isDriver) {
+                        Text(
+                            "Start OTP: $startOtp",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AppTheme.extendedColors.info,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                        Text(
+                            "Have the customer read this back to you to start the trip.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 val actionError = state.actionError
                 if (actionError != null) {
-                    Text(
-                        text = actionError,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                    Text(text = actionError, color = MaterialTheme.colorScheme.error)
                 }
                 val successMessage = state.actionSuccessMessage
                 if (successMessage != null) {
-                    Text(
-                        text = successMessage,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                    Text(text = successMessage, color = AppTheme.extendedColors.success)
                 }
 
                 // Driver: accept a requested booking
                 if (booking.status == "REQUESTED" && isDriver) {
-                    ActionButton(
-                        label = "Accept booking",
-                        isLoading = state.isActing,
-                        modifier = Modifier.padding(top = 16.dp)
-                    ) {
+                    ActionButton(label = "Accept booking", isLoading = state.isActing) {
                         ensureLocationPermission()
                         val loc = lastKnownLocation(context)
                         viewModel.accept(booking.id, loc?.first, loc?.second)
@@ -166,11 +172,7 @@ fun BookingDetailScreen(
 
                 // Driver: mark arrived
                 if (booking.status == "ACCEPTED" && isDriver) {
-                    ActionButton(
-                        label = "Mark arrived",
-                        isLoading = state.isActing,
-                        modifier = Modifier.padding(top = 16.dp)
-                    ) {
+                    ActionButton(label = "Mark arrived", isLoading = state.isActing) {
                         ensureLocationPermission()
                         val loc = lastKnownLocation(context)
                         viewModel.arrived(booking.id, loc?.first, loc?.second)
@@ -179,147 +181,187 @@ fun BookingDetailScreen(
 
                 // Driver: start trip with OTP
                 if (booking.status == "DRIVER_ARRIVED" && isDriver) {
-                    OutlinedTextField(
-                        value = otpInput,
-                        onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) otpInput = it },
-                        label = { Text("Start OTP") },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = KeyboardType.NumberPassword
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-                    )
-                    ActionButton(
-                        label = "Start trip",
-                        isLoading = state.isActing,
-                        enabled = otpInput.length == 4,
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        viewModel.start(booking.id, otpInput)
+                    SectionCard {
+                        OutlinedTextField(
+                            value = otpInput,
+                            onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) otpInput = it },
+                            label = { Text("Start OTP") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = KeyboardType.NumberPassword
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(
+                            onClick = { viewModel.start(booking.id, otpInput) },
+                            enabled = otpInput.length == 4 && !state.isActing,
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                        ) {
+                            if (state.isActing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Text("Start trip")
+                            }
+                        }
                     }
                 }
 
                 // Driver: complete trip
                 if (booking.status == "IN_PROGRESS" && isDriver) {
-                    OutlinedTextField(
-                        value = distanceKmInput,
-                        onValueChange = { distanceKmInput = it },
-                        label = { Text("Distance travelled, km (optional)") },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-                    )
-                    OutlinedTextField(
-                        value = waitingMinutesInput,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) waitingMinutesInput = it },
-                        label = { Text("Waiting minutes (optional)") },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    ActionButton(
-                        label = "Complete trip",
-                        isLoading = state.isActing,
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        viewModel.complete(
-                            booking.id,
-                            distanceKmInput.trim().toDoubleOrNull(),
-                            waitingMinutesInput.trim().toIntOrNull(),
-                            null,
-                            null
+                    SectionCard {
+                        OutlinedTextField(
+                            value = distanceKmInput,
+                            onValueChange = { distanceKmInput = it },
+                            label = { Text("Distance travelled, km (optional)") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
+                        OutlinedTextField(
+                            value = waitingMinutesInput,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) waitingMinutesInput = it },
+                            label = { Text("Waiting minutes (optional)") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                        )
+                        Button(
+                            onClick = {
+                                viewModel.complete(
+                                    booking.id,
+                                    distanceKmInput.trim().toDoubleOrNull(),
+                                    waitingMinutesInput.trim().toIntOrNull(),
+                                    null,
+                                    null
+                                )
+                            },
+                            enabled = !state.isActing,
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                        ) {
+                            if (state.isActing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Text("Complete trip")
+                            }
+                        }
                     }
                 }
 
                 // Driver: record cash payment after completion
                 if (booking.status == "COMPLETED" && isDriver) {
-                    OutlinedTextField(
-                        value = cashAmountInput,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) cashAmountInput = it },
-                        label = { Text("Cash collected, paise") },
-                        placeholder = { Text(booking.totalFarePaise?.toString() ?: "") },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-                    )
-                    ActionButton(
-                        label = "Record cash payment",
-                        isLoading = state.isActing,
-                        enabled = cashAmountInput.isNotBlank(),
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        viewModel.recordCashPayment(booking.id, cashAmountInput.trim().toLong(), null)
+                    SectionCard {
+                        OutlinedTextField(
+                            value = cashAmountInput,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) cashAmountInput = it },
+                            label = { Text("Cash collected, paise") },
+                            placeholder = { Text(booking.totalFarePaise?.toString() ?: "") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(
+                            onClick = { viewModel.recordCashPayment(booking.id, cashAmountInput.trim().toLong(), null) },
+                            enabled = cashAmountInput.isNotBlank() && !state.isActing,
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                        ) {
+                            if (state.isActing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Text("Record cash payment")
+                            }
+                        }
                     }
                 }
 
                 // Customer: rate after completion
                 if (booking.status == "COMPLETED" && isCustomer) {
-                    Text("Rate this trip", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-                    Row(modifier = Modifier.padding(top = 4.dp)) {
-                        for (star in 1..5) {
-                            TextButton(onClick = { rateStars = star }) {
-                                Text(if (star <= rateStars) "★" else "☆", style = MaterialTheme.typography.titleLarge)
+                    SectionCard {
+                        Text("Rate this trip", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Row(modifier = Modifier.padding(top = 4.dp)) {
+                            for (star in 1..5) {
+                                TextButton(onClick = { rateStars = star }) {
+                                    Text(
+                                        if (star <= rateStars) "★" else "☆",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = AppTheme.extendedColors.warning
+                                    )
+                                }
                             }
                         }
-                    }
-                    OutlinedTextField(
-                        value = rateComment,
-                        onValueChange = { rateComment = it },
-                        label = { Text("Comment (optional)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    ActionButton(
-                        label = "Submit rating",
-                        isLoading = state.isActing,
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        viewModel.rate(booking.id, rateStars, rateComment.trim().ifBlank { null })
+                        OutlinedTextField(
+                            value = rateComment,
+                            onValueChange = { rateComment = it },
+                            label = { Text("Comment (optional)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        )
+                        Button(
+                            onClick = { viewModel.rate(booking.id, rateStars, rateComment.trim().ifBlank { null }) },
+                            enabled = !state.isActing,
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                        ) {
+                            if (state.isActing) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Text("Submit rating")
+                            }
+                        }
                     }
                 }
 
                 // Either party: cancel while still cancellable
                 val cancellable = booking.status in setOf("REQUESTED", "ACCEPTED", "DRIVER_ARRIVED")
                 if (cancellable && (isCustomer || isDriver)) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-                    OutlinedTextField(
-                        value = cancelReason,
-                        onValueChange = { cancelReason = it },
-                        label = { Text("Cancellation reason") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedButton(
-                        onClick = { viewModel.cancel(booking.id, cancelReason.trim()) },
-                        enabled = cancelReason.isNotBlank() && !state.isActing,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    ) {
-                        Text("Cancel booking")
+                    SectionCard {
+                        Text("Cancel booking", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        OutlinedTextField(
+                            value = cancelReason,
+                            onValueChange = { cancelReason = it },
+                            label = { Text("Cancellation reason") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        )
+                        OutlinedButton(
+                            onClick = { viewModel.cancel(booking.id, cancelReason.trim()) },
+                            enabled = cancelReason.isNotBlank() && !state.isActing,
+                            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        ) {
+                            Text("Cancel booking")
+                        }
                     }
                 }
 
                 if (state.timeline.isNotEmpty()) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-                    Text("Timeline", style = MaterialTheme.typography.titleMedium)
-                    state.timeline.forEach { event ->
-                        Text(
-                            "${event.fromStatus ?: "—"} → ${event.toStatus} (${event.actorRole ?: "system"})",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
+                    SectionCard {
+                        Text("Timeline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        state.timeline.forEachIndexed { index, event ->
+                            if (index > 0) HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth().padding(top = if (index == 0) 8.dp else 0.dp)
+                            ) {
+                                Text(
+                                    "${event.fromStatus ?: "—"} → ${event.toStatus}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    event.actorRole ?: "system",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
-            }
-
-            TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
-                Text("Back")
             }
         }
     }
@@ -330,13 +372,12 @@ private fun ActionButton(
     label: String,
     isLoading: Boolean,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
         enabled = enabled && !isLoading,
-        modifier = modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     ) {
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)

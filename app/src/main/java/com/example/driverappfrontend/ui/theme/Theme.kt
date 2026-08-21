@@ -1,6 +1,5 @@
 package com.example.driverappfrontend.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,6 +8,9 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -22,6 +24,31 @@ private val LightColorScheme = lightColorScheme(
     secondary = TealDark,
     tertiary = AmberDark
 )
+
+data class ExtendedColors(
+    val success: Color,
+    val warning: Color,
+    val info: Color
+)
+
+private val DarkExtendedColors = ExtendedColors(
+    success = SuccessLight,
+    warning = WarningLightTone,
+    info = InfoLightTone
+)
+
+private val LightExtendedColors = ExtendedColors(
+    success = SuccessDark,
+    warning = WarningDarkTone,
+    info = InfoDarkTone
+)
+
+private val LocalExtendedColors = staticCompositionLocalOf { LightExtendedColors }
+
+object AppTheme {
+    val extendedColors: ExtendedColors
+        @Composable get() = LocalExtendedColors.current
+}
 
 @Composable
 fun DriverAppFrontendTheme(
@@ -39,10 +66,13 @@ fun DriverAppFrontendTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+    val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
