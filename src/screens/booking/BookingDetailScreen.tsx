@@ -10,7 +10,7 @@ import AppButton from '../../components/AppButton';
 import AppTextField from '../../components/AppTextField';
 import SectionCard from '../../components/SectionCard';
 import StatusBadge, { statusTone } from '../../components/StatusBadge';
-import { useThemeColors } from '../../theme/colors';
+import { ThemeColors, useThemeColors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookingDetail'>;
@@ -41,6 +41,8 @@ export default function BookingDetailScreen({ route }: Props) {
   const [otpInput, setOtpInput] = useState('');
   const [distanceKmInput, setDistanceKmInput] = useState('');
   const [waitingMinutesInput, setWaitingMinutesInput] = useState('');
+  const [tollInput, setTollInput] = useState('');
+  const [parkingInput, setParkingInput] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [cashAmountInput, setCashAmountInput] = useState('');
   const [rateStars, setRateStars] = useState(5);
@@ -111,7 +113,11 @@ export default function BookingDetailScreen({ route }: Props) {
       bookingApi.complete(
         bookingId,
         distanceKmInput.trim() ? parseFloat(distanceKmInput.trim()) : null,
-        waitingMinutesInput.trim() ? parseInt(waitingMinutesInput.trim(), 10) : null
+        waitingMinutesInput.trim() ? parseInt(waitingMinutesInput.trim(), 10) : null,
+        null,
+        null,
+        tollInput.trim() ? parseInt(tollInput.trim(), 10) : null,
+        parkingInput.trim() ? parseInt(parkingInput.trim(), 10) : null
       )
     );
   }
@@ -168,6 +174,14 @@ export default function BookingDetailScreen({ route }: Props) {
           </Text>
         )}
 
+        {booking.surgeMultiplierBps > 10000 && (
+          <View style={[styles.surgeBadge, { backgroundColor: colors.warning + '26' }]}>
+            <Text style={[styles.surgeText, { color: colors.warning }]}>
+              Surge {booking.surgeMultiplierX} — {booking.surgeLabel ?? 'high demand'}
+            </Text>
+          </View>
+        )}
+
         {lastStartOtp && isDriver && (
           <>
             <Text style={[styles.startOtp, { color: colors.info }]}>Start OTP: {lastStartOtp}</Text>
@@ -177,6 +191,8 @@ export default function BookingDetailScreen({ route }: Props) {
           </>
         )}
       </SectionCard>
+
+      {booking.totalFarePaise != null && <FareBreakdown booking={booking} colors={colors} />}
 
       {actionError && <Text style={[styles.error, { color: colors.error }]}>{actionError}</Text>}
       {actionSuccessMessage && <Text style={[styles.success, { color: colors.success }]}>{actionSuccessMessage}</Text>}
@@ -221,6 +237,18 @@ export default function BookingDetailScreen({ route }: Props) {
             label="Waiting minutes (optional)"
             value={waitingMinutesInput}
             onChangeText={(v) => /^\d*$/.test(v) && setWaitingMinutesInput(v)}
+            keyboardType="number-pad"
+          />
+          <AppTextField
+            label="Toll paid, paise (optional)"
+            value={tollInput}
+            onChangeText={(v) => /^\d*$/.test(v) && setTollInput(v)}
+            keyboardType="number-pad"
+          />
+          <AppTextField
+            label="Parking paid, paise (optional)"
+            value={parkingInput}
+            onChangeText={(v) => /^\d*$/.test(v) && setParkingInput(v)}
             keyboardType="number-pad"
           />
           <View style={styles.spacingTop}>
@@ -305,6 +333,54 @@ export default function BookingDetailScreen({ route }: Props) {
   );
 }
 
+const fareLineLabels: Record<string, string> = {
+  estimatedFare: 'Estimated fare',
+  timeOrDistance: 'Time/distance',
+  kmOverage: 'Extra distance',
+  waiting: 'Waiting charge',
+  nightExtra: 'Night charge',
+  surge: 'Surge',
+  allowance: 'Allowance',
+  floorTopup: 'Minimum fare top-up',
+  toll: 'Toll',
+  parking: 'Parking',
+  totalFare: 'Total fare',
+  commission: 'Platform commission',
+  driverEarning: 'Driver earning',
+  cancellationFeeOwed: 'Cancellation fee owed',
+  goodwillCreditOwed: 'Goodwill credit owed',
+};
+// Always shown even at zero -- everything else is hidden when it didn't apply.
+const alwaysShown = new Set(['totalFare', 'commission', 'driverEarning']);
+const fareLineOrder = Object.keys(fareLineLabels);
+
+function FareBreakdown({ booking, colors }: { booking: Booking; colors: ThemeColors }) {
+  const rupees = booking.rupees ?? {};
+  const lines = fareLineOrder.filter((key) => rupees[key] != null && (alwaysShown.has(key) || rupees[key] !== '0.00'));
+
+  if (lines.length === 0) return null;
+
+  return (
+    <SectionCard>
+      <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Fare breakdown</Text>
+      {lines.map((key) => (
+        <View key={key} style={[styles.row, styles.fareLineRow]}>
+          <Text style={[styles.fareLineLabel, { color: colors.onSurfaceVariant }]}>{fareLineLabels[key]}</Text>
+          <Text
+            style={[
+              styles.fareLineValue,
+              { color: key === 'totalFare' ? colors.primary : colors.onSurface },
+              key === 'totalFare' && styles.fareLineValueBold,
+            ]}
+          >
+            ₹{rupees[key]}
+          </Text>
+        </View>
+      ))}
+    </SectionCard>
+  );
+}
+
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: 20 },
@@ -312,6 +388,12 @@ const styles = StyleSheet.create({
   code: { fontSize: 19, fontWeight: '600' },
   meta: { fontSize: 13, marginTop: 6 },
   fare: { fontSize: 17, fontWeight: '600', marginTop: 12 },
+  surgeBadge: { alignSelf: 'flex-start', borderRadius: 50, paddingHorizontal: 12, paddingVertical: 4, marginTop: 8 },
+  surgeText: { fontSize: 12, fontWeight: '600' },
+  fareLineRow: { marginTop: 8 },
+  fareLineLabel: { fontSize: 14 },
+  fareLineValue: { fontSize: 14 },
+  fareLineValueBold: { fontWeight: '700', fontSize: 16 },
   startOtp: { fontSize: 17, fontWeight: '700', marginTop: 12 },
   hint: { fontSize: 12, marginTop: 2 },
   error: { marginBottom: 12 },

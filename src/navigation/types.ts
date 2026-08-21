@@ -1,6 +1,6 @@
 export type RootStackParamList = {
   PhoneEntry: undefined;
-  OtpEntry: { phone: string };
+  OtpEntry: { phone: string; devOtp?: string };
   Home: undefined;
   Profile: undefined;
   Driver: undefined;

@@ -15,10 +15,12 @@ import { addSmsReceivedListener, startListening, stopListening } from '../../../
 type Props = NativeStackScreenProps<RootStackParamList, 'OtpEntry'>;
 
 export default function OtpEntryScreen({ route, navigation }: Props) {
-  const { phone } = route.params;
+  const { phone, devOtp } = route.params;
   const colors = useThemeColors();
   const { login } = useAuth();
-  const [otp, setOtp] = useState('');
+  // Pre-filled only when the backend returned devOtp (app.otp.expose-in-response=true,
+  // dev/test only -- this param is undefined whenever that's off, including production).
+  const [otp, setOtp] = useState(devOtp ?? '');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 

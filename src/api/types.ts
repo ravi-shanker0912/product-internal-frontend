@@ -7,6 +7,9 @@ export interface OtpRequestBody {
 
 export interface OtpRequestResponse {
   status: string;
+  /** Only present when the backend has app.otp.expose-in-response=true (dev/test only, never in production). */
+  devOtp?: string;
+  warning?: string;
 }
 
 export interface OtpVerifyBody {
@@ -83,9 +86,38 @@ export interface LocationBody {
 
 export type DocType = 'DL_FRONT' | 'DL_BACK' | 'SELFIE' | 'RC' | 'INSURANCE' | 'AADHAAR';
 
-export interface UploadDocumentBody {
+// Document upload is a 3-step signed-URL flow (see StorageDtos.java):
+// 1. requestUploadUrl -> UploadUrlResponse (a URL to PUT the file bytes to)
+// 2. the client PUTs the raw bytes to uploadUrl
+// 3. confirmUpload -> DriverDocument records that the file exists
+// Documents are read back as DocumentView, with a freshly signed viewUrl.
+
+export interface UploadUrlRequest {
   docType: DocType;
-  fileUrl: string;
+  contentType: string;
+  contentLength: number;
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  storageKey: string;
+  expiresInSeconds: number;
+  method: string;
+  requiredContentTypeHeader: string | null;
+}
+
+export interface ConfirmUploadRequest {
+  docType: DocType;
+  storageKey: string;
+  expiresAt: string | null;
+}
+
+export interface DocumentView {
+  id: string;
+  docType: DocType;
+  storageKey: string;
+  viewUrl: string;
+  viewUrlExpiresInSeconds: number;
   expiresAt: string | null;
 }
 
@@ -103,11 +135,12 @@ export interface DriverProfile {
   totalTrips: number;
 }
 
+/** What confirmUpload returns — the raw record, no signed view URL (see DocumentView for that). */
 export interface DriverDocument {
   id: string;
   driverId: string;
   docType: DocType;
-  fileUrl: string;
+  storageKey: string;
   expiresAt: string | null;
   uploadedAt: string;
 }
@@ -183,6 +216,9 @@ export interface CompleteBody {
   waitingMinutes: number | null;
   daysAway: number | null;
   nightHalts: number | null;
+  /** Pass-through at actuals, in paise — reimbursed in full, never surged or commissioned. */
+  tollPaise: number | null;
+  parkingPaise: number | null;
 }
 
 export interface CancelBody {
@@ -239,6 +275,27 @@ export interface Booking {
   paymentMethod: string | null;
   settledAt: string | null;
   settlementRef: string | null;
+
+  // Pricing v2 (paise unless noted).
+  kmOveragePaise: number;
+  /** What was actually charged. 10000 = 1.0x. */
+  surgeMultiplierBps: number;
+  /** What surge WOULD have charged had the feature been on -- recorded even while it's off. */
+  surgeCandidateBps: number;
+  surgeLabel: string | null;
+  surgePaise: number;
+  floorTopupPaise: number;
+  tollPaise: number;
+  parkingPaise: number;
+  cancellationFeePaise: number;
+  goodwillCreditPaise: number;
+  driverNoShow: boolean;
+  /** e.g. "1.0x" */
+  surgeMultiplierX: string;
+  /** e.g. "1.4x" -- what surge would have charged, even while off. */
+  surgeCandidateX: string;
+  /** Same amounts as above, pre-formatted as rupee strings for display (e.g. "42.50"). */
+  rupees: Record<string, string>;
 }
 
 export interface BookingStatusHistory {

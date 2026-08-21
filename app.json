@@ -35,6 +35,13 @@
         {
           "locationWhenInUsePermission": "EasyRides uses your location to find nearby drivers and to share your pickup point."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "EasyRides needs access to your photos to upload driver documents.",
+          "cameraPermission": "EasyRides needs access to your camera to photograph driver documents."
+        }
       ]
     ]
   }

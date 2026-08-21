@@ -28,8 +28,8 @@ export default function PhoneEntryScreen({ navigation }: Props) {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      await authApi.requestOtp(trimmedPhone);
-      navigation.navigate('OtpEntry', { phone: trimmedPhone });
+      const response = await authApi.requestOtp(trimmedPhone);
+      navigation.navigate('OtpEntry', { phone: trimmedPhone, devOtp: response.devOtp });
     } catch (err) {
       setErrorMessage(extractErrorMessage(err));
     } finally {

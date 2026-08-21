@@ -10,9 +10,11 @@ import {
   CancelBody,
   CashPaymentBody,
   CompleteBody,
+  ConfirmUploadRequest,
   CreateBookingBody,
   CreateDriverProfileBody,
   DocType,
+  DocumentView,
   DriverDocument,
   DriverProfile,
   Gearbox,
@@ -32,6 +34,8 @@ import {
   TokenPair,
   TripType,
   UpdateProfileBody,
+  UploadUrlRequest,
+  UploadUrlResponse,
   UserProfile,
   Vehicle,
 } from './types';
@@ -39,9 +43,16 @@ import {
 // ---- Auth ----
 
 export const authApi = {
-  async requestOtp(phone: string): Promise<void> {
+  /**
+   * Returns the full response so callers can opportunistically read
+   * `devOtp` when the backend has app.otp.expose-in-response=true (dev/test
+   * only -- the field is simply absent in production, so this is safe to
+   * always check).
+   */
+  async requestOtp(phone: string): Promise<OtpRequestResponse> {
     const body: OtpRequestBody = { phone };
-    await apiClient.post<OtpRequestResponse>('api/auth/otp/request', body);
+    const { data } = await apiClient.post<OtpRequestResponse>('api/auth/otp/request', body);
+    return data;
   },
 
   async verifyOtp(phone: string, otp: string): Promise<TokenPair> {
@@ -115,17 +126,44 @@ export const driverApi = {
     await apiClient.post('api/me/driver/location', body);
   },
 
-  async uploadDocument(docType: DocType, fileUrl: string, expiresAt: string | null): Promise<DriverDocument> {
-    const { data } = await apiClient.post<DriverDocument>('api/me/driver/documents', {
-      docType,
-      fileUrl,
-      expiresAt,
+  /**
+   * The full 3-step signed-upload flow in one call: ask where to put the
+   * file, PUT the bytes there directly (not through our API, so a 5MB
+   * licence photo doesn't hold an authenticated request open), then confirm.
+   * `localUri` is whatever expo-image-picker/expo-camera hands back.
+   */
+  async uploadDocumentFile(
+    docType: DocType,
+    localUri: string,
+    mimeType: string,
+    expiresAt: string | null
+  ): Promise<DriverDocument> {
+    const fileResponse = await fetch(localUri);
+    const blob = await fileResponse.blob();
+
+    const urlRequest: UploadUrlRequest = { docType, contentType: mimeType, contentLength: blob.size };
+    const { data: uploadInfo } = await apiClient.post<UploadUrlResponse>(
+      'api/me/driver/documents/upload-url',
+      urlRequest
+    );
+
+    const putResponse = await fetch(uploadInfo.uploadUrl, {
+      method: uploadInfo.method || 'PUT',
+      headers: { 'Content-Type': uploadInfo.requiredContentTypeHeader || mimeType },
+      body: blob,
     });
+    if (!putResponse.ok) {
+      throw new Error(`Upload failed (HTTP ${putResponse.status})`);
+    }
+
+    const confirmBody: ConfirmUploadRequest = { docType, storageKey: uploadInfo.storageKey, expiresAt };
+    const { data } = await apiClient.post<DriverDocument>('api/me/driver/documents', confirmBody);
     return data;
   },
 
-  async listDocuments(): Promise<DriverDocument[]> {
-    const { data } = await apiClient.get<DriverDocument[]>('api/me/driver/documents');
+  /** Each document comes back with a freshly signed, short-lived view URL. */
+  async listDocuments(): Promise<DocumentView[]> {
+    const { data } = await apiClient.get<DocumentView[]>('api/me/driver/documents');
     return data;
   },
 };
@@ -243,9 +281,11 @@ export const bookingApi = {
     distanceKm: number | null,
     waitingMinutes: number | null,
     daysAway: number | null = null,
-    nightHalts: number | null = null
+    nightHalts: number | null = null,
+    tollPaise: number | null = null,
+    parkingPaise: number | null = null
   ): Promise<Booking> {
-    const body: CompleteBody = { distanceKm, waitingMinutes, daysAway, nightHalts };
+    const body: CompleteBody = { distanceKm, waitingMinutes, daysAway, nightHalts, tollPaise, parkingPaise };
     const { data } = await apiClient.post<Booking>(`api/bookings/${id}/complete`, body);
     return data;
   },
