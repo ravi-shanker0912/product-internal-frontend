@@ -21,6 +21,7 @@ fun HomeScreen(
     onOpenProfile: () -> Unit,
     onOpenDriver: () -> Unit,
     onOpenSearch: () -> Unit,
+    onOpenBookings: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -55,6 +56,13 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
                 Text("Find a driver")
+            }
+
+            Button(
+                onClick = onOpenBookings,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            ) {
+                Text("My bookings")
             }
 
             OutlinedButton(

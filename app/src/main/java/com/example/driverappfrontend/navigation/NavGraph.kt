@@ -6,10 +6,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.driverappfrontend.data.AuthRepository
+import com.example.driverappfrontend.data.BookingRepository
 import com.example.driverappfrontend.data.DriverRepository
 import com.example.driverappfrontend.data.ProfileRepository
 import com.example.driverappfrontend.data.SearchRepository
@@ -17,6 +20,11 @@ import com.example.driverappfrontend.ui.auth.AuthViewModel
 import com.example.driverappfrontend.ui.auth.AuthViewModelFactory
 import com.example.driverappfrontend.ui.auth.OtpEntryScreen
 import com.example.driverappfrontend.ui.auth.PhoneEntryScreen
+import com.example.driverappfrontend.ui.booking.BookingDetailScreen
+import com.example.driverappfrontend.ui.booking.BookingViewModel
+import com.example.driverappfrontend.ui.booking.BookingViewModelFactory
+import com.example.driverappfrontend.ui.booking.BookingsScreen
+import com.example.driverappfrontend.ui.booking.CreateBookingScreen
 import com.example.driverappfrontend.ui.driver.DriverDocumentsScreen
 import com.example.driverappfrontend.ui.driver.DriverScreen
 import com.example.driverappfrontend.ui.driver.DriverViewModel
@@ -39,6 +47,11 @@ object Routes {
     const val DRIVER_DOCUMENTS = "driver_documents"
     const val VEHICLES = "vehicles"
     const val SEARCH = "search"
+    const val CREATE_BOOKING = "create_booking"
+    const val BOOKINGS = "bookings"
+    const val BOOKING_DETAIL = "booking_detail/{bookingId}"
+
+    fun bookingDetail(id: String) = "booking_detail/$id"
 }
 
 @Composable
@@ -47,12 +60,14 @@ fun AppNavGraph(
     driverRepository: DriverRepository,
     profileRepository: ProfileRepository,
     searchRepository: SearchRepository,
+    bookingRepository: BookingRepository,
     navController: NavHostController = rememberNavController()
 ) {
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
     val driverViewModel: DriverViewModel = viewModel(factory = DriverViewModelFactory(driverRepository))
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModelFactory(profileRepository))
     val searchViewModel: SearchViewModel = viewModel(factory = SearchViewModelFactory(searchRepository))
+    val bookingViewModel: BookingViewModel = viewModel(factory = BookingViewModelFactory(bookingRepository))
 
     NavHost(navController = navController, startDestination = Routes.PHONE_ENTRY) {
         composable(Routes.PHONE_ENTRY) {
@@ -81,6 +96,7 @@ fun AppNavGraph(
                 onOpenProfile = { navController.navigate(Routes.PROFILE) },
                 onOpenDriver = { navController.navigate(Routes.DRIVER) },
                 onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                onOpenBookings = { navController.navigate(Routes.BOOKINGS) },
                 onLogout = {
                     authViewModel.logout {
                         navController.navigate(Routes.PHONE_ENTRY) {
@@ -123,6 +139,43 @@ fun AppNavGraph(
         composable(Routes.SEARCH) {
             SearchScreen(
                 viewModel = searchViewModel,
+                onBack = { navController.popBackStack() },
+                onBookDriver = { driverId, serviceType ->
+                    bookingViewModel.prepareBooking(driverId, serviceType)
+                    navController.navigate(Routes.CREATE_BOOKING)
+                },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.CREATE_BOOKING) {
+            CreateBookingScreen(
+                viewModel = bookingViewModel,
+                onBooked = { bookingId ->
+                    navController.navigate(Routes.bookingDetail(bookingId)) {
+                        popUpTo(Routes.SEARCH) { inclusive = true }
+                    }
+                },
+                onBack = { navController.popBackStack() },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.BOOKINGS) {
+            BookingsScreen(
+                viewModel = bookingViewModel,
+                onOpenBooking = { id -> navController.navigate(Routes.bookingDetail(id)) },
+                onBack = { navController.popBackStack() },
+                modifier = Modifier
+            )
+        }
+        composable(
+            Routes.BOOKING_DETAIL,
+            arguments = listOf(navArgument("bookingId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val bookingId = backStackEntry.arguments?.getString("bookingId") ?: return@composable
+            BookingDetailScreen(
+                bookingId = bookingId,
+                viewModel = bookingViewModel,
+                profileViewModel = profileViewModel,
                 onBack = { navController.popBackStack() },
                 modifier = Modifier
             )

@@ -19,6 +19,7 @@ data class ProfileUiState(
 
     val fullName: String = "",
     val email: String = "",
+    val cityId: String = "",
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false
 )
@@ -38,7 +39,8 @@ class ProfileViewModel(private val repository: ProfileRepository) : ViewModel() 
                             isLoading = false,
                             profile = profile,
                             fullName = profile.fullName.orEmpty(),
-                            email = profile.email.orEmpty()
+                            email = profile.email.orEmpty(),
+                            cityId = profile.cityId?.toString().orEmpty()
                         )
                     }
                 }
@@ -56,13 +58,20 @@ class ProfileViewModel(private val repository: ProfileRepository) : ViewModel() 
         _uiState.update { it.copy(email = value, saveSuccess = false) }
     }
 
+    fun onCityIdChange(value: String) {
+        if (value.all { it.isDigit() }) {
+            _uiState.update { it.copy(cityId = value, saveSuccess = false) }
+        }
+    }
+
     fun save() {
         val state = uiState.value
         _uiState.update { it.copy(isSaving = true, errorMessage = null, saveSuccess = false) }
         viewModelScope.launch {
             repository.updateProfile(
                 fullName = state.fullName.trim().ifBlank { null },
-                email = state.email.trim().ifBlank { null }
+                email = state.email.trim().ifBlank { null },
+                cityId = state.cityId.trim().toIntOrNull()
             )
                 .onSuccess { profile ->
                     _uiState.update {

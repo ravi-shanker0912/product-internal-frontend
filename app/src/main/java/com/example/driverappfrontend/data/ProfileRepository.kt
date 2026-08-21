@@ -8,7 +8,7 @@ class ProfileRepository(private val api: ProfileApi) {
 
     suspend fun getProfile(): Result<UserProfile> = runCatching { api.getProfile() }
 
-    suspend fun updateProfile(fullName: String?, email: String?): Result<UserProfile> = runCatching {
-        api.updateProfile(UpdateProfileBody(fullName = fullName, email = email))
+    suspend fun updateProfile(fullName: String?, email: String?, cityId: Int?): Result<UserProfile> = runCatching {
+        api.updateProfile(UpdateProfileBody(fullName = fullName, email = email, cityId = cityId))
     }
 }

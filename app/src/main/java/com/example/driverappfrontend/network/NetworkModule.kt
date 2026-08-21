@@ -131,4 +131,5 @@ object NetworkModule {
     val driverApi: DriverApi = retrofit.create(DriverApi::class.java)
     val profileApi: ProfileApi = retrofit.create(ProfileApi::class.java)
     val searchApi: SearchApi = retrofit.create(SearchApi::class.java)
+    val bookingApi: BookingApi = retrofit.create(BookingApi::class.java)
 }

@@ -85,6 +85,23 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
                 )
 
+                OutlinedTextField(
+                    value = state.cityId,
+                    onValueChange = viewModel::onCityIdChange,
+                    label = { Text("City ID") },
+                    placeholder = { Text("1") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                )
+                Text(
+                    "Required to book a driver. This deployment has one city: 1 = Patna.",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
                 val error = state.errorMessage
                 if (error != null) {
                     Text(

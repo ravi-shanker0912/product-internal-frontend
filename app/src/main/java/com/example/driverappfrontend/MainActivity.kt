@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.driverappfrontend.data.AuthRepository
+import com.example.driverappfrontend.data.BookingRepository
 import com.example.driverappfrontend.data.DriverRepository
 import com.example.driverappfrontend.data.ProfileRepository
 import com.example.driverappfrontend.data.SearchRepository
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
         val driverRepository = DriverRepository(NetworkModule.driverApi)
         val profileRepository = ProfileRepository(NetworkModule.profileApi)
         val searchRepository = SearchRepository(NetworkModule.searchApi)
+        val bookingRepository = BookingRepository(NetworkModule.bookingApi)
 
         setContent {
             DriverAppFrontendTheme {
@@ -35,7 +37,8 @@ class MainActivity : ComponentActivity() {
                     authRepository = authRepository,
                     driverRepository = driverRepository,
                     profileRepository = profileRepository,
-                    searchRepository = searchRepository
+                    searchRepository = searchRepository,
+                    bookingRepository = bookingRepository
                 )
             }
         }

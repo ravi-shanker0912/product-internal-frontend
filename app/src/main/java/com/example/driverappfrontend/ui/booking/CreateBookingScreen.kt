@@ -1,4 +1,4 @@
-package com.example.driverappfrontend.ui.search
+package com.example.driverappfrontend.ui.booking
 
 import android.Manifest
 import android.content.Context
@@ -18,11 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,31 +29,43 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 
-private val serviceTypeOptions = listOf("WITH_CAR", "WITHOUT_CAR")
+private val tripTypeOptions = listOf("HOURLY", "FULL_DAY", "OUTSTATION", "CAB_TRIP")
 
 @Composable
-fun SearchScreen(
-    viewModel: SearchViewModel,
+fun CreateBookingScreen(
+    viewModel: BookingViewModel,
+    onBooked: (bookingId: String) -> Unit,
     onBack: () -> Unit,
-    onBookDriver: (driverId: String, serviceType: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    var lat by remember { mutableStateOf<Double?>(null) }
+    var lon by remember { mutableStateOf<Double?>(null) }
+    var locationMessage by remember { mutableStateOf<String?>(null) }
+    var tripType by remember { mutableStateOf(tripTypeOptions.first()) }
+    var pickupAddress by remember { mutableStateOf("") }
+    var dropAddress by remember { mutableStateOf("") }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            fetchCurrentLocation(context, viewModel)
+            val result = currentLocation(context)
+            lat = result?.first
+            lon = result?.second
+            if (result == null) locationMessage = "No location available. Enable GPS and try again."
         } else {
-            viewModel.reportNoLocationAvailable()
+            locationMessage = "Location permission is required to book."
         }
     }
 
@@ -63,7 +74,10 @@ fun SearchScreen(
             context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
         if (hasPermission) {
-            fetchCurrentLocation(context, viewModel)
+            val result = currentLocation(context)
+            lat = result?.first
+            lon = result?.second
+            if (result == null) locationMessage = "No location available. Enable GPS and try again."
         } else {
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -77,27 +91,26 @@ fun SearchScreen(
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            Text("Find a driver", style = MaterialTheme.typography.headlineSmall)
+            Text("Confirm booking", style = MaterialTheme.typography.headlineSmall)
 
-            if (state.lat != null && state.lon != null) {
+            if (lat != null && lon != null) {
                 Text(
-                    text = "Searching near %.4f, %.4f".format(state.lat, state.lon),
+                    text = "Pickup: %.4f, %.4f (your current location)".format(lat, lon),
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
-            val locationMessage = state.locationMessage
             if (locationMessage != null) {
                 Text(
-                    text = locationMessage,
-                    style = MaterialTheme.typography.bodySmall,
+                    text = locationMessage ?: "",
                     color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
             Text(
-                "Service type",
+                "Trip type",
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(top = 16.dp)
             )
@@ -105,24 +118,32 @@ fun SearchScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)
             ) {
-                serviceTypeOptions.forEach { option ->
+                tripTypeOptions.forEach { option ->
                     FilterChip(
-                        selected = state.serviceType == option,
-                        onClick = { viewModel.onServiceTypeChange(option) },
+                        selected = tripType == option,
+                        onClick = { tripType = option },
                         label = { Text(option) }
                     )
                 }
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            OutlinedTextField(
+                value = pickupAddress,
+                onValueChange = { pickupAddress = it },
+                label = { Text("Pickup address (optional)") },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-            ) {
-                Checkbox(checked = state.automaticOnly, onCheckedChange = viewModel::onAutomaticOnlyChange)
-                Text("Automatic transmission only")
-            }
+            )
 
-            val error = state.errorMessage
+            OutlinedTextField(
+                value = dropAddress,
+                onValueChange = { dropAddress = it },
+                label = { Text("Drop address (optional)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            )
+
+            val error = state.createError
             if (error != null) {
                 Text(
                     text = error,
@@ -132,49 +153,30 @@ fun SearchScreen(
             }
 
             Button(
-                onClick = { viewModel.search() },
-                enabled = state.lat != null && state.lon != null && !state.isSearching,
+                onClick = {
+                    val pickLat = lat ?: return@Button
+                    val pickLon = lon ?: return@Button
+                    viewModel.createBooking(
+                        tripType = tripType,
+                        pickupLat = pickLat,
+                        pickupLon = pickLon,
+                        pickupAddress = pickupAddress.trim().ifBlank { null },
+                        dropLat = null,
+                        dropLon = null,
+                        dropAddress = dropAddress.trim().ifBlank { null },
+                        onCreated = onBooked
+                    )
+                },
+                enabled = lat != null && lon != null && !state.isCreating,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
-                if (state.isSearching) {
+                if (state.isCreating) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Search")
-                }
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-
-            if (state.hasSearched && !state.isSearching) {
-                if (state.results.isEmpty()) {
-                    Text(
-                        "No drivers nearby right now.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else {
-                    state.results.forEach { driver ->
-                        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                            Text(
-                                driver.fullName ?: "Driver",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            val distance = driver.distanceKm?.let { "%.1f km away".format(it) } ?: "Distance unknown"
-                            val rating = driver.ratingAvg?.let { "★ %.1f".format(it) } ?: "No rating yet"
-                            Text(
-                                "$distance · $rating · ${driver.totalTrips ?: 0} trips",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            TextButton(
-                                onClick = { onBookDriver(driver.driverId, state.serviceType) },
-                                modifier = Modifier.padding(top = 4.dp)
-                            ) {
-                                Text("Book")
-                            }
-                        }
-                    }
+                    Text("Book this driver")
                 }
             }
 
@@ -185,10 +187,9 @@ fun SearchScreen(
     }
 }
 
-private fun fetchCurrentLocation(context: Context, viewModel: SearchViewModel) {
+private fun currentLocation(context: Context): Pair<Double, Double>? {
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
-
     var location: Location? = null
     try {
         for (provider in providers) {
@@ -198,13 +199,7 @@ private fun fetchCurrentLocation(context: Context, viewModel: SearchViewModel) {
             }
         }
     } catch (e: SecurityException) {
-        viewModel.reportNoLocationAvailable()
-        return
+        return null
     }
-
-    if (location != null) {
-        viewModel.setLocation(location.latitude, location.longitude)
-    } else {
-        viewModel.reportNoLocationAvailable()
-    }
+    return location?.let { it.latitude to it.longitude }
 }
