@@ -25,7 +25,8 @@ class BookingRepository(private val api: BookingApi) {
         pickupAddress: String?,
         dropLat: Double?,
         dropLon: Double?,
-        dropAddress: String?
+        dropAddress: String?,
+        vehicleId: String?
     ): Result<Booking> = runCatching {
         api.create(
             CreateBookingBody(
@@ -38,7 +39,7 @@ class BookingRepository(private val api: BookingApi) {
                 dropLat = dropLat,
                 dropLon = dropLon,
                 dropAddress = dropAddress,
-                vehicleId = null
+                vehicleId = vehicleId
             )
         )
     }

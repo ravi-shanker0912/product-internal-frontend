@@ -16,6 +16,7 @@ import com.example.driverappfrontend.data.BookingRepository
 import com.example.driverappfrontend.data.DriverRepository
 import com.example.driverappfrontend.data.ProfileRepository
 import com.example.driverappfrontend.data.SearchRepository
+import com.example.driverappfrontend.data.VehicleRepository
 import com.example.driverappfrontend.ui.auth.AuthViewModel
 import com.example.driverappfrontend.ui.auth.AuthViewModelFactory
 import com.example.driverappfrontend.ui.auth.OtpEntryScreen
@@ -37,6 +38,9 @@ import com.example.driverappfrontend.ui.profile.ProfileViewModelFactory
 import com.example.driverappfrontend.ui.search.SearchScreen
 import com.example.driverappfrontend.ui.search.SearchViewModel
 import com.example.driverappfrontend.ui.search.SearchViewModelFactory
+import com.example.driverappfrontend.ui.vehicle.MyVehiclesScreen
+import com.example.driverappfrontend.ui.vehicle.VehicleViewModel
+import com.example.driverappfrontend.ui.vehicle.VehicleViewModelFactory
 
 object Routes {
     const val PHONE_ENTRY = "phone_entry"
@@ -50,6 +54,7 @@ object Routes {
     const val CREATE_BOOKING = "create_booking"
     const val BOOKINGS = "bookings"
     const val BOOKING_DETAIL = "booking_detail/{bookingId}"
+    const val MY_VEHICLES = "my_vehicles"
 
     fun bookingDetail(id: String) = "booking_detail/$id"
 }
@@ -61,6 +66,7 @@ fun AppNavGraph(
     profileRepository: ProfileRepository,
     searchRepository: SearchRepository,
     bookingRepository: BookingRepository,
+    customerVehicleRepository: VehicleRepository,
     navController: NavHostController = rememberNavController()
 ) {
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
@@ -68,6 +74,8 @@ fun AppNavGraph(
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModelFactory(profileRepository))
     val searchViewModel: SearchViewModel = viewModel(factory = SearchViewModelFactory(searchRepository))
     val bookingViewModel: BookingViewModel = viewModel(factory = BookingViewModelFactory(bookingRepository))
+    val customerVehicleViewModel: VehicleViewModel =
+        viewModel(factory = VehicleViewModelFactory(customerVehicleRepository))
 
     NavHost(navController = navController, startDestination = Routes.PHONE_ENTRY) {
         composable(Routes.PHONE_ENTRY) {
@@ -97,6 +105,7 @@ fun AppNavGraph(
                 onOpenDriver = { navController.navigate(Routes.DRIVER) },
                 onOpenSearch = { navController.navigate(Routes.SEARCH) },
                 onOpenBookings = { navController.navigate(Routes.BOOKINGS) },
+                onOpenMyVehicles = { navController.navigate(Routes.MY_VEHICLES) },
                 onLogout = {
                     authViewModel.logout {
                         navController.navigate(Routes.PHONE_ENTRY) {
@@ -150,11 +159,20 @@ fun AppNavGraph(
         composable(Routes.CREATE_BOOKING) {
             CreateBookingScreen(
                 viewModel = bookingViewModel,
+                vehicleViewModel = customerVehicleViewModel,
                 onBooked = { bookingId ->
                     navController.navigate(Routes.bookingDetail(bookingId)) {
                         popUpTo(Routes.SEARCH) { inclusive = true }
                     }
                 },
+                onManageVehicles = { navController.navigate(Routes.MY_VEHICLES) },
+                onBack = { navController.popBackStack() },
+                modifier = Modifier
+            )
+        }
+        composable(Routes.MY_VEHICLES) {
+            MyVehiclesScreen(
+                viewModel = customerVehicleViewModel,
                 onBack = { navController.popBackStack() },
                 modifier = Modifier
             )

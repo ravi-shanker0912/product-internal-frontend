@@ -22,6 +22,7 @@ fun HomeScreen(
     onOpenDriver: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenBookings: () -> Unit,
+    onOpenMyVehicles: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -63,6 +64,13 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
                 Text("My bookings")
+            }
+
+            Button(
+                onClick = onOpenMyVehicles,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            ) {
+                Text("My car")
             }
 
             OutlinedButton(

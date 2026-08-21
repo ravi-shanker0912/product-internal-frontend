@@ -55,6 +55,7 @@ class BookingViewModel(private val repository: BookingRepository) : ViewModel() 
         dropLat: Double?,
         dropLon: Double?,
         dropAddress: String?,
+        vehicleId: String?,
         onCreated: (String) -> Unit
     ) {
         val driverId = uiState.value.pendingDriverId ?: return
@@ -70,7 +71,8 @@ class BookingViewModel(private val repository: BookingRepository) : ViewModel() 
                 pickupAddress = pickupAddress,
                 dropLat = dropLat,
                 dropLon = dropLon,
-                dropAddress = dropAddress
+                dropAddress = dropAddress,
+                vehicleId = vehicleId
             )
                 .onSuccess { booking ->
                     _uiState.update { it.copy(isCreating = false) }

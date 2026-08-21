@@ -10,6 +10,7 @@ import com.example.driverappfrontend.data.DriverRepository
 import com.example.driverappfrontend.data.ProfileRepository
 import com.example.driverappfrontend.data.SearchRepository
 import com.example.driverappfrontend.data.TokenStore
+import com.example.driverappfrontend.data.VehicleRepository
 import com.example.driverappfrontend.navigation.AppNavGraph
 import com.example.driverappfrontend.network.NetworkModule
 import com.example.driverappfrontend.ui.theme.DriverAppFrontendTheme
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
         val profileRepository = ProfileRepository(NetworkModule.profileApi)
         val searchRepository = SearchRepository(NetworkModule.searchApi)
         val bookingRepository = BookingRepository(NetworkModule.bookingApi)
+        val customerVehicleRepository = VehicleRepository(NetworkModule.driverApi, ownerType = "CUSTOMER")
 
         setContent {
             DriverAppFrontendTheme {
@@ -38,7 +40,8 @@ class MainActivity : ComponentActivity() {
                     driverRepository = driverRepository,
                     profileRepository = profileRepository,
                     searchRepository = searchRepository,
-                    bookingRepository = bookingRepository
+                    bookingRepository = bookingRepository,
+                    customerVehicleRepository = customerVehicleRepository
                 )
             }
         }

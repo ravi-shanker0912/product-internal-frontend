@@ -36,18 +36,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.driverappfrontend.ui.vehicle.VehicleViewModel
 
 private val tripTypeOptions = listOf("HOURLY", "FULL_DAY", "OUTSTATION", "CAB_TRIP")
 
 @Composable
 fun CreateBookingScreen(
     viewModel: BookingViewModel,
+    vehicleViewModel: VehicleViewModel,
     onBooked: (bookingId: String) -> Unit,
+    onManageVehicles: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
+    val vehicleState by vehicleViewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val needsVehicle = state.pendingServiceType == "WITHOUT_CAR"
 
     var lat by remember { mutableStateOf<Double?>(null) }
     var lon by remember { mutableStateOf<Double?>(null) }
@@ -55,6 +60,9 @@ fun CreateBookingScreen(
     var tripType by remember { mutableStateOf(tripTypeOptions.first()) }
     var pickupAddress by remember { mutableStateOf("") }
     var dropAddress by remember { mutableStateOf("") }
+    var selectedVehicleId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(needsVehicle) { if (needsVehicle) vehicleViewModel.loadVehicles() }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -143,6 +151,37 @@ fun CreateBookingScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             )
 
+            if (needsVehicle) {
+                Text(
+                    "Your car",
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+                if (vehicleState.vehicles.isEmpty()) {
+                    Text(
+                        "No car registered yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)
+                    ) {
+                        vehicleState.vehicles.forEach { vehicle ->
+                            FilterChip(
+                                selected = selectedVehicleId == vehicle.id,
+                                onClick = { selectedVehicleId = vehicle.id },
+                                label = { Text("${vehicle.make} ${vehicle.model}") }
+                            )
+                        }
+                    }
+                }
+                TextButton(onClick = onManageVehicles, modifier = Modifier.padding(top = 4.dp)) {
+                    Text("Manage my cars")
+                }
+            }
+
             val error = state.createError
             if (error != null) {
                 Text(
@@ -164,6 +203,7 @@ fun CreateBookingScreen(
                         dropLat = null,
                         dropLon = null,
                         dropAddress = dropAddress.trim().ifBlank { null },
+                        vehicleId = selectedVehicleId,
                         onCreated = onBooked
                     )
                 },
