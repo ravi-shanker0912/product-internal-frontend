@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "EasyRides",
+    "slug": "easyrides",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "easyrides",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.driverappfrontend",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "EasyRides uses your location to find nearby drivers and to share your pickup point."
+      }
+    },
+    "android": {
+      "package": "com.example.driverappfrontend",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B5FBB",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "EasyRides uses your location to find nearby drivers and to share your pickup point."
+        }
+      ]
+    ]
+  }
+}
