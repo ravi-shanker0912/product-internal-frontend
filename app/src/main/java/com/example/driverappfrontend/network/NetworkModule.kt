@@ -13,8 +13,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 /**
- * 10.0.2.2 is the Android emulator's alias for the host machine's localhost.
- * Only valid when testing from the emulator against a locally running backend.
+ * Points at the host machine's LAN IP rather than the emulator's 10.0.2.2 alias:
+ * this Windows setup has a Hyper-V Firewall rule on the WSL virtual switch that
+ * blocks TCP to 10.0.2.2, but allows it over Wi-Fi where docker's port binding
+ * already has an existing allow rule. Backend runs on port 8080 (see
+ * D:\Product Internal\driverapp docker-compose.yml).
  */
 object NetworkModule {
 
