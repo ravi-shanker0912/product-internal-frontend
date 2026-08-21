@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { authApi } from '../../api/endpoints';
@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { OTP_LENGTH } from '../../constants';
 import { useThemeColors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
+import { addSmsReceivedListener, startListening, stopListening } from '../../../modules/sms-retriever';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OtpEntry'>;
 
@@ -23,11 +24,11 @@ export default function OtpEntryScreen({ route, navigation }: Props) {
 
   const isOtpValid = otp.length === OTP_LENGTH && /^\d+$/.test(otp);
 
-  async function verify() {
+  async function verify(otpValue: string) {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      await authApi.verifyOtp(phone, otp.trim());
+      await authApi.verifyOtp(phone, otpValue.trim());
       login(phone);
       // Navigation switches to the authenticated stack automatically once
       // AuthContext.isAuthenticated flips — see RootNavigator.
@@ -37,6 +38,26 @@ export default function OtpEntryScreen({ route, navigation }: Props) {
       setIsLoading(false);
     }
   }
+
+  // Silent SMS auto-read (Android SMS Retriever API — no permission, no
+  // consent dialog, works as long as the SMS body ends with this build's
+  // signature hash). No-ops on iOS since the native module isn't available.
+  useEffect(() => {
+    startListening();
+    const otpRegex = new RegExp(`\\b\\d{${OTP_LENGTH}}\\b`);
+    const subscription = addSmsReceivedListener(({ message }) => {
+      const match = message.match(otpRegex);
+      if (match) {
+        setOtp(match[0]);
+        verify(match[0]);
+      }
+    });
+    return () => {
+      subscription?.remove();
+      stopListening();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -66,7 +87,12 @@ export default function OtpEntryScreen({ route, navigation }: Props) {
           )}
 
           <View style={styles.buttonSpacing}>
-            <AppButton label="Verify" onPress={verify} loading={isLoading} disabled={!isOtpValid} />
+            <AppButton
+              label="Verify"
+              onPress={() => verify(otp)}
+              loading={isLoading}
+              disabled={!isOtpValid}
+            />
           </View>
           <View style={styles.buttonSpacing}>
             <AppButton

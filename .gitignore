@@ -42,3 +42,8 @@ yarn-error.*
 
 # IDE
 .idea/
+
+# local Expo modules' native build output
+modules/**/android/build/
+modules/**/android/.cxx/
+modules/**/ios/build/
